@@ -250,7 +250,7 @@ export default function Portfolio() {
       tech: ['Java', 'Spigot API', 'MySQL', 'YAML'],
       link: 'https://github.com/HerobrineTG/arcanesmpplugin',
       featured: true,
-      stats: { plugins: '5+', features: '15+' }
+      stats: { plugins: '5+', features: '10+' }
     },
     {
       title: 'Modern Web Portfolio',
