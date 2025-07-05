@@ -36,7 +36,7 @@ interface ButtonProps {
   disabled?: boolean;
 }
 
-export const Button: React.FC<ButtonProps> = ({
+const Button: React.FC<ButtonProps> = ({
   children,
   onClick,
   className = '',
@@ -66,27 +66,27 @@ interface WithChildren {
   className?: string;
 }
 
-export const Card: React.FC<WithChildren> = ({ children, className = '' }) => (
+const Card: React.FC<WithChildren> = ({ children, className = '' }) => (
   <div className={`rounded-lg shadow-lg ${className}`}>{children}</div>
 );
 
-export const CardHeader: React.FC<WithChildren> = ({ children, className = '' }) => (
+const CardHeader: React.FC<WithChildren> = ({ children, className = '' }) => (
   <div className={`p-6 border-b border-gray-700 ${className}`}>{children}</div>
 );
 
-export const CardTitle: React.FC<WithChildren> = ({ children, className = '' }) => (
+const CardTitle: React.FC<WithChildren> = ({ children, className = '' }) => (
   <h3 className={`text-xl font-semibold text-white ${className}`}>{children}</h3>
 );
 
-export const CardDescription: React.FC<WithChildren> = ({ children, className = '' }) => (
+const CardDescription: React.FC<WithChildren> = ({ children, className = '' }) => (
   <p className={`text-sm text-gray-400 ${className}`}>{children}</p>
 );
 
-export const CardContent: React.FC<WithChildren> = ({ children, className = '' }) => (
+const CardContent: React.FC<WithChildren> = ({ children, className = '' }) => (
   <div className={`p-6 ${className}`}>{children}</div>
 );
 
-export const Badge: React.FC<WithChildren> = ({ children, className = '' }) => (
+const Badge: React.FC<WithChildren> = ({ children, className = '' }) => (
   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-200 ${className}`}>
     {children}
   </span>
