@@ -94,7 +94,7 @@ const Badge: React.FC<WithChildren> = ({ children, className = '' }) => (
 
 
 import Link from 'next/link'; // Keep Next.js Link for navigation
-import blogs from '@/data/blogs.json'; // Initial data source
+import rawBlogs from '@/data/blogs.json'; // Initial data source
 
 interface BlogPost {
     id: string;
@@ -137,6 +137,8 @@ export default function BlogPage() {
     const searchParams = useSearchParams();
     const postId = searchParams.get('id'); // This will be the ID if present in /blog?id=<some_id>
 
+    const blogs: BlogPost[] = rawBlogs;
+    
     useEffect(() => {
         // Load posts from localStorage
         const savedPosts = localStorage.getItem('blog-posts');
