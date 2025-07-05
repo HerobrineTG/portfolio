@@ -25,58 +25,73 @@ import remarkGfm from 'remark-gfm'; // For GitHub Flavored Markdown
 // import { Button } from '@/components/ui/button'; 
 // import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 // import { Badge } from '@/components/ui/badge';
-const Button = ({ children, onClick, className = '', variant = 'default', size = 'md', disabled = false }) => (
-    <button 
-        onClick={onClick} 
-        className={`px-4 py-2 rounded-md transition-all duration-200 ${className} 
-            ${variant === 'default' ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}
-            ${variant === 'outline' ? 'border border-gray-400 text-gray-300 hover:bg-gray-700' : ''}
-            ${variant === 'ghost' ? 'text-gray-300 hover:bg-gray-700' : ''}
-            ${size === 'sm' ? 'text-sm px-3 py-1.5' : ''}
-            ${size === 'lg' ? 'text-lg px-6 py-3' : ''}
-            ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
-        `}
-        disabled={disabled}
-    >
-        {children}
-    </button>
+import React, { ReactNode, MouseEventHandler } from 'react';
+
+interface ButtonProps {
+  children: ReactNode;
+  onClick?: MouseEventHandler<HTMLButtonElement>;
+  className?: string;
+  variant?: 'default' | 'outline' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
+  disabled?: boolean;
+}
+
+export const Button: React.FC<ButtonProps> = ({
+  children,
+  onClick,
+  className = '',
+  variant = 'default',
+  size = 'md',
+  disabled = false,
+}) => (
+  <button
+    onClick={onClick}
+    className={`px-4 py-2 rounded-md transition-all duration-200 ${className} 
+      ${variant === 'default' ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}
+      ${variant === 'outline' ? 'border border-gray-400 text-gray-300 hover:bg-gray-700' : ''}
+      ${variant === 'ghost' ? 'text-gray-300 hover:bg-gray-700' : ''}
+      ${size === 'sm' ? 'text-sm px-3 py-1.5' : ''}
+      ${size === 'lg' ? 'text-lg px-6 py-3' : ''}
+      ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
+    `}
+    disabled={disabled}
+  >
+    {children}
+  </button>
 );
 
-const Card = ({ children, className = '' }) => (
-    <div className={`rounded-lg shadow-lg ${className}`}>
-        {children}
-    </div>
+// Shared props interface for other components
+interface WithChildren {
+  children: ReactNode;
+  className?: string;
+}
+
+export const Card: React.FC<WithChildren> = ({ children, className = '' }) => (
+  <div className={`rounded-lg shadow-lg ${className}`}>{children}</div>
 );
 
-const CardHeader = ({ children, className = '' }) => (
-    <div className={`p-6 border-b border-gray-700 ${className}`}>
-        {children}
-    </div>
+export const CardHeader: React.FC<WithChildren> = ({ children, className = '' }) => (
+  <div className={`p-6 border-b border-gray-700 ${className}`}>{children}</div>
 );
 
-const CardTitle = ({ children, className = '' }) => (
-    <h3 className={`text-xl font-semibold text-white ${className}`}>
-        {children}
-    </h3>
+export const CardTitle: React.FC<WithChildren> = ({ children, className = '' }) => (
+  <h3 className={`text-xl font-semibold text-white ${className}`}>{children}</h3>
 );
 
-const CardDescription = ({ children, className = '' }) => (
-    <p className={`text-sm text-gray-400 ${className}`}>
-        {children}
-    </p>
+export const CardDescription: React.FC<WithChildren> = ({ children, className = '' }) => (
+  <p className={`text-sm text-gray-400 ${className}`}>{children}</p>
 );
 
-const CardContent = ({ children, className = '' }) => (
-    <div className={`p-6 ${className}`}>
-        {children}
-    </div>
+export const CardContent: React.FC<WithChildren> = ({ children, className = '' }) => (
+  <div className={`p-6 ${className}`}>{children}</div>
 );
 
-const Badge = ({ children, className = '' }) => (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-200 ${className}`}>
-        {children}
-    </span>
+export const Badge: React.FC<WithChildren> = ({ children, className = '' }) => (
+  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-200 ${className}`}>
+    {children}
+  </span>
 );
+
 
 import Link from 'next/link'; // Keep Next.js Link for navigation
 import blogs from '@/data/blogs.json'; // Initial data source
