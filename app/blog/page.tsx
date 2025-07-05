@@ -2,920 +2,973 @@
 
 import { useState, useEffect } from 'react';
 import { 
-  ArrowLeft, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Calendar, 
-  User, 
-  Eye,
-  Lock,
-  BookOpen,
-  Save,
-  X,
-  Search,
-  Filter,
-  Clock,
-  Tag,
-  Heart,
-  Share2,
-  MessageCircle,
-  TrendingUp
+    ArrowLeft, 
+    Plus, 
+    Edit, 
+    Trash2, 
+    Calendar, 
+    Lock,
+    BookOpen,
+    Save,
+    X,
+    Search,
+    Filter,
+    Clock,
+    Tag,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import Link from 'next/link';
+import { useSearchParams } from 'next/navigation'; // Import useSearchParams for Next.js 13+ App Router
+import ReactMarkdown from 'react-markdown'; // For rendering Markdown content
+import remarkGfm from 'remark-gfm'; // For GitHub Flavored Markdown
+
+// Mock components if not running in a Next.js environment with shadcn/ui
+// In a real Next.js project with shadcn/ui, these imports would be correct.
+// import { Button } from '@/components/ui/button'; 
+// import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+// import { Badge } from '@/components/ui/badge';
+const Button = ({ children, onClick, className = '', variant = 'default', size = 'md', disabled = false }) => (
+    <button 
+        onClick={onClick} 
+        className={`px-4 py-2 rounded-md transition-all duration-200 ${className} 
+            ${variant === 'default' ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}
+            ${variant === 'outline' ? 'border border-gray-400 text-gray-300 hover:bg-gray-700' : ''}
+            ${variant === 'ghost' ? 'text-gray-300 hover:bg-gray-700' : ''}
+            ${size === 'sm' ? 'text-sm px-3 py-1.5' : ''}
+            ${size === 'lg' ? 'text-lg px-6 py-3' : ''}
+            ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
+        `}
+        disabled={disabled}
+    >
+        {children}
+    </button>
+);
+
+const Card = ({ children, className = '' }) => (
+    <div className={`rounded-lg shadow-lg ${className}`}>
+        {children}
+    </div>
+);
+
+const CardHeader = ({ children, className = '' }) => (
+    <div className={`p-6 border-b border-gray-700 ${className}`}>
+        {children}
+    </div>
+);
+
+const CardTitle = ({ children, className = '' }) => (
+    <h3 className={`text-xl font-semibold text-white ${className}`}>
+        {children}
+    </h3>
+);
+
+const CardDescription = ({ children, className = '' }) => (
+    <p className={`text-sm text-gray-400 ${className}`}>
+        {children}
+    </p>
+);
+
+const CardContent = ({ children, className = '' }) => (
+    <div className={`p-6 ${className}`}>
+        {children}
+    </div>
+);
+
+const Badge = ({ children, className = '' }) => (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-200 ${className}`}>
+        {children}
+    </span>
+);
+
+import Link from 'next/link'; // Keep Next.js Link for navigation
+import blogs from '@/data/blogs.json'; // Initial data source
 
 interface BlogPost {
-  id: string;
-  title: string;
-  content: string;
-  excerpt: string;
-  date: string;
-  tags: string[];
-  published: boolean;
-  readTime: number;
-  views: number;
-  likes: number;
-  category: string;
+    id: string;
+    title: string;
+    content: string;
+    excerpt: string;
+    date: string;
+    tags: string[];
+    published: boolean;
+    readTime: number;
+    views: number;
+    likes: number;
+    category: string;
 }
 
 export default function BlogPage() {
-  const [posts, setPosts] = useState<BlogPost[]>([]);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [authError, setAuthError] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [selectedTag, setSelectedTag] = useState('All');
-  
-  // Form states
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [tags, setTags] = useState('');
-  const [category, setCategory] = useState('');
-
-  const categories = ['All', 'Web Development', 'Programming', 'Tutorials', 'Personal', 'Tech News', 'Projects'];
-
-  useEffect(() => {
-    // Load posts from localStorage
-    const savedPosts = localStorage.getItem('blog-posts');
-    if (savedPosts) {
-      setPosts(JSON.parse(savedPosts));
-    } else {
-      // Add some sample posts for demonstration
-      const samplePosts: BlogPost[] = [
-        {
-          id: '1',
-          title: 'Getting Started with Next.js 13: A Comprehensive Guide',
-          content: `Next.js 13 has revolutionized the way we build React applications with its new App Router, Server Components, and improved performance optimizations. In this comprehensive guide, I'll walk you through everything you need to know to get started with Next.js 13.
-
-## What's New in Next.js 13?
-
-The latest version of Next.js introduces several groundbreaking features:
-
-### 1. App Router
-The new App Router is built on React's Server Components and provides a more intuitive way to organize your application. It uses a file-system based router where folders define routes.
-
-### 2. Server Components
-Server Components allow you to render components on the server, reducing the amount of JavaScript sent to the client and improving performance.
-
-### 3. Streaming
-With the new streaming capabilities, you can progressively render your UI, showing users content as it becomes available.
-
-## Setting Up Your First Next.js 13 Project
-
-Let's start by creating a new Next.js 13 project:
-
-\`\`\`bash
-npx create-next-app@latest my-app --typescript --tailwind --eslint
-cd my-app
-npm run dev
-\`\`\`
-
-This command creates a new Next.js project with TypeScript, Tailwind CSS, and ESLint configured.
-
-## Understanding the App Directory
-
-The new app directory structure looks like this:
-
-\`\`\`
-app/
-  layout.tsx
-  page.tsx
-  loading.tsx
-  error.tsx
-  not-found.tsx
-\`\`\`
-
-Each file serves a specific purpose:
-- \`layout.tsx\`: Defines the layout for a route segment
-- \`page.tsx\`: Defines the UI for a route
-- \`loading.tsx\`: Shows loading UI
-- \`error.tsx\`: Shows error UI
-- \`not-found.tsx\`: Shows 404 UI
-
-## Best Practices
-
-1. **Use Server Components by default**: Only use Client Components when you need interactivity
-2. **Optimize images**: Use Next.js Image component for automatic optimization
-3. **Implement proper SEO**: Use metadata API for better search engine optimization
-4. **Monitor performance**: Use Next.js built-in analytics and monitoring tools
-
-## Conclusion
-
-Next.js 13 represents a significant step forward in React development. The new features make it easier to build fast, scalable applications while maintaining a great developer experience.
-
-Start experimenting with these new features in your next project, and you'll quickly see the benefits they bring to both development and user experience.`,
-          excerpt: 'Discover the revolutionary features of Next.js 13 including the new App Router, Server Components, and streaming capabilities that will transform your React development experience.',
-          date: '2024-01-15',
-          tags: ['Next.js', 'React', 'Web Development', 'JavaScript', 'Tutorial'],
-          published: true,
-          readTime: 8,
-          views: 1250,
-          likes: 89,
-          category: 'Web Development'
-        },
-        {
-          id: '2',
-          title: 'Building Custom Minecraft Plugins: From Concept to Implementation',
-          content: `Creating custom Minecraft plugins is one of the most rewarding ways to enhance gameplay and learn Java programming. In this detailed guide, I'll share my experience building plugins and the lessons I've learned along the way.
-
-## Why Build Minecraft Plugins?
-
-Minecraft plugins offer unlimited possibilities to customize gameplay, add new features, and create unique server experiences. They're also an excellent way to learn Java programming in a fun, interactive environment.
-
-## Setting Up Your Development Environment
-
-Before we start coding, let's set up the development environment:
-
-### 1. Install Java Development Kit (JDK)
-Make sure you have JDK 8 or higher installed on your system.
-
-### 2. Choose an IDE
-I recommend IntelliJ IDEA or Eclipse for Java development.
-
-### 3. Set Up Spigot/Paper
-Download the latest Spigot or Paper server jar for testing your plugins.
-
-## Creating Your First Plugin
-
-Let's create a simple plugin that adds a custom command:
-
-\`\`\`java
-public class MyFirstPlugin extends JavaPlugin {
+    const [posts, setPosts] = useState<BlogPost[]>([]);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [showAuthModal, setShowAuthModal] = useState(false);
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [authError, setAuthError] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('All');
+    const [selectedTag, setSelectedTag] = useState('All');
+    const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+    const [postToDelete, setPostToDelete] = useState<string | null>(null);
     
-    @Override
-    public void onEnable() {
-        getLogger().info("MyFirstPlugin has been enabled!");
-        this.getCommand("hello").setExecutor(new HelloCommand());
-    }
-    
-    @Override
-    public void onDisable() {
-        getLogger().info("MyFirstPlugin has been disabled!");
-    }
-}
-\`\`\`
+    // Form states
+    const [title, setTitle] = useState('');
+    const [content, setContent] = useState('');
+    const [tags, setTags] = useState('');
+    const [category, setCategory] = useState('');
 
-## Essential Plugin Components
+    const categories = ['All', 'Web Development', 'Programming', 'Tutorials', 'Personal', 'Tech News', 'Projects'];
 
-### 1. plugin.yml
-This file contains metadata about your plugin:
+    // Get URL search parameters
+    const searchParams = useSearchParams();
+    const postId = searchParams.get('id'); // This will be the ID if present in /blog?id=<some_id>
 
-\`\`\`yaml
-name: MyFirstPlugin
-version: 1.0.0
-main: com.example.MyFirstPlugin
-api-version: 1.19
-commands:
-  hello:
-    description: Says hello to the player
-    usage: /hello
-\`\`\`
-
-### 2. Event Listeners
-Handle game events to create interactive features:
-
-\`\`\`java
-@EventHandler
-public void onPlayerJoin(PlayerJoinEvent event) {
-    Player player = event.getPlayer();
-    player.sendMessage("Welcome to the server!");
-}
-\`\`\`
-
-### 3. Configuration Files
-Use configuration files to make your plugin customizable:
-
-\`\`\`java
-FileConfiguration config = this.getConfig();
-config.addDefault("welcome-message", "Welcome!");
-config.options().copyDefaults(true);
-saveConfig();
-\`\`\`
-
-## Advanced Features
-
-### Custom Items and Recipes
-Create unique items with special properties and custom crafting recipes.
-
-### Database Integration
-Store player data and plugin information using SQLite or MySQL.
-
-### Economy Integration
-Connect with economy plugins to create shops and trading systems.
-
-## Best Practices
-
-1. **Always validate input**: Check player permissions and command arguments
-2. **Handle errors gracefully**: Use try-catch blocks and provide meaningful error messages
-3. **Optimize performance**: Avoid blocking the main thread with heavy operations
-4. **Test thoroughly**: Test your plugin on different server versions and configurations
-
-## Publishing Your Plugin
-
-Once your plugin is ready:
-1. Create comprehensive documentation
-2. Test on multiple server versions
-3. Submit to SpigotMC or other plugin repositories
-4. Provide ongoing support and updates
-
-## Conclusion
-
-Building Minecraft plugins is an incredible journey that combines creativity with programming skills. Start with simple ideas and gradually work your way up to more complex features.
-
-Remember, the Minecraft plugin development community is very supportive, so don't hesitate to ask for help when you need it!`,
-          excerpt: 'Learn how to create amazing Minecraft plugins from scratch, covering everything from basic setup to advanced features like custom items and database integration.',
-          date: '2024-01-10',
-          tags: ['Minecraft', 'Java', 'Plugin Development', 'Game Development', 'Programming'],
-          published: true,
-          readTime: 12,
-          views: 890,
-          likes: 67,
-          category: 'Programming'
-        },
-        {
-          id: '3',
-          title: 'My Journey as a 15-Year-Old Developer: Challenges and Triumphs',
-          content: `Being a teenage developer comes with unique challenges and incredible opportunities. Today, I want to share my personal journey, the obstacles I've faced, and the victories that have shaped my path in technology.
-
-## How It All Started
-
-My coding journey began when I was 13 years old. Like many young developers, I was initially drawn to programming through gaming. I wanted to create my own Minecraft mods and understand how my favorite games worked.
-
-## The Early Challenges
-
-### 1. Finding the Right Resources
-As a young learner, finding age-appropriate and comprehensive learning resources was challenging. Many tutorials assumed prior knowledge that I didn't have.
-
-### 2. Balancing School and Coding
-Managing schoolwork while pursuing my passion for programming required careful time management and prioritization.
-
-### 3. Overcoming Imposter Syndrome
-Feeling like I didn't belong in developer communities because of my age was a significant hurdle to overcome.
-
-## Key Learning Milestones
-
-### First "Hello World"
-I still remember the excitement of seeing my first "Hello World" program run successfully. It was a simple Java program, but it felt like magic.
-
-### First Minecraft Plugin
-Creating my first working Minecraft plugin was a game-changer. Seeing other players use something I created was incredibly motivating.
-
-### First Web Application
-Transitioning from Java to web development opened up a whole new world of possibilities. Building my first React application felt like unlocking a new superpower.
-
-## What I've Learned
-
-### 1. Persistence is Key
-Programming is challenging, and bugs are inevitable. Learning to persist through difficult problems has been crucial to my growth.
-
-### 2. Community Matters
-The developer community is incredibly welcoming and supportive. Don't be afraid to ask questions and seek help.
-
-### 3. Build Projects You're Passionate About
-Working on projects that genuinely interest you makes learning more enjoyable and sustainable.
-
-### 4. Document Your Journey
-Keeping track of your progress and sharing your experiences helps both you and others in the community.
-
-## Advice for Young Developers
-
-### Start Small
-Don't try to build the next Facebook on your first project. Start with simple programs and gradually increase complexity.
-
-### Embrace Failure
-Every bug is a learning opportunity. Don't get discouraged by errors – they're part of the learning process.
-
-### Find Mentors
-Connect with experienced developers who can guide you and provide valuable insights.
-
-### Stay Curious
-Technology evolves rapidly. Maintain your curiosity and keep learning new things.
-
-## Current Projects and Future Goals
-
-Currently, I'm working on several exciting projects:
-- A comprehensive portfolio website (this one!)
-- Advanced Minecraft plugins with custom mechanics
-- Web applications using modern frameworks
-
-My future goals include:
-- Contributing to open-source projects
-- Pursuing computer science in college
-- Building applications that solve real-world problems
-
-## The Road Ahead
-
-Being a young developer in today's tech landscape is both exciting and challenging. The opportunities are endless, and the tools available to us are more powerful than ever.
-
-To other young developers reading this: your age is not a limitation – it's an advantage. You have time to experiment, learn, and grow. Embrace the journey, celebrate small victories, and never stop coding.
-
-## Final Thoughts
-
-My journey as a 15-year-old developer has been filled with ups and downs, but every challenge has contributed to my growth. The skills I'm developing now will serve as the foundation for my future career in technology.
-
-Remember, every expert was once a beginner. Keep coding, keep learning, and most importantly, keep having fun with it!`,
-          excerpt: 'A personal reflection on the challenges and triumphs of being a teenage developer, sharing insights and advice for other young programmers starting their journey.',
-          date: '2024-01-05',
-          tags: ['Personal', 'Career', 'Learning', 'Motivation', 'Young Developer'],
-          published: true,
-          readTime: 10,
-          views: 1450,
-          likes: 156,
-          category: 'Personal'
+    useEffect(() => {
+        // Load posts from localStorage
+        const savedPosts = localStorage.getItem('blog-posts');
+        if (savedPosts) {
+            setPosts(JSON.parse(savedPosts));
+        } else {
+            // If no saved posts, initialize from blogs.json and save to localStorage
+            setPosts(blogs);
+            localStorage.setItem('blog-posts', JSON.stringify(blogs));
         }
-      ];
-      setPosts(samplePosts);
-      localStorage.setItem('blog-posts', JSON.stringify(samplePosts));
-    }
-    
-    // Check if user is authenticated
-    const authStatus = localStorage.getItem('blog-auth');
-    if (authStatus === 'true') {
-      setIsAuthenticated(true);
-    }
-  }, []);
+        
+        // Check if user is authenticated
+        const authStatus = localStorage.getItem('blog-auth');
+        if (authStatus === 'true') {
+            setIsAuthenticated(true);
+        }
+    }, []); // Empty dependency array means this runs once on mount
 
-  const handleAuth = () => {
-    if (email === 'jehoshua.dev@gmail.com' && password === 'HerobrineTG') {
-      setIsAuthenticated(true);
-      localStorage.setItem('blog-auth', 'true');
-      setShowAuthModal(false);
-      setAuthError('');
-      setEmail('');
-      setPassword('');
-    } else {
-      setAuthError('Invalid credentials');
-    }
-  };
-
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    localStorage.removeItem('blog-auth');
-  };
-
-  const savePosts = (newPosts: BlogPost[]) => {
-    setPosts(newPosts);
-    localStorage.setItem('blog-posts', JSON.stringify(newPosts));
-  };
-
-  const calculateReadTime = (content: string): number => {
-    const wordsPerMinute = 200;
-    const wordCount = content.split(' ').length;
-    return Math.ceil(wordCount / wordsPerMinute);
-  };
-
-  const handleCreatePost = () => {
-    if (!title.trim() || !content.trim()) return;
-
-    const newPost: BlogPost = {
-      id: Date.now().toString(),
-      title: title.trim(),
-      content: content.trim(),
-      excerpt: content.trim().substring(0, 200) + '...',
-      date: new Date().toISOString().split('T')[0],
-      tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag),
-      published: true,
-      readTime: calculateReadTime(content.trim()),
-      views: 0,
-      likes: 0,
-      category: category || 'Personal'
+    const handleAuth = () => {
+        if (email === 'jehoshua.dev@gmail.com' && password === 'HerobrineTG') {
+            setIsAuthenticated(true);
+            localStorage.setItem('blog-auth', 'true');
+            setShowAuthModal(false);
+            setAuthError('');
+            setEmail('');
+            setPassword('');
+        } else {
+            setAuthError('Invalid credentials');
+        }
     };
 
-    const newPosts = [newPost, ...posts];
-    savePosts(newPosts);
-    
-    // Reset form
-    setTitle('');
-    setContent('');
-    setTags('');
-    setCategory('');
-    setShowCreateModal(false);
-  };
+    const handleLogout = () => {
+        setIsAuthenticated(false);
+        localStorage.removeItem('blog-auth');
+    };
 
-  const handleEditPost = () => {
-    if (!editingPost || !title.trim() || !content.trim()) return;
+    const savePosts = (newPosts: BlogPost[]) => {
+        setPosts(newPosts);
+        localStorage.setItem('blog-posts', JSON.stringify(newPosts));
+    };
 
-    const updatedPosts = posts.map(post => 
-      post.id === editingPost.id 
-        ? {
-            ...post,
+    const calculateReadTime = (text: string): number => {
+        const wordsPerMinute = 200;
+        const wordCount = text.split(/\s+/).filter(word => word.length > 0).length; // More robust word count
+        return Math.ceil(wordCount / wordsPerMinute);
+    };
+
+    const handleCreatePost = () => {
+        if (!title.trim() || !content.trim()) return;
+
+        const newPost: BlogPost = {
+            id: Date.now().toString(), // Simple unique ID
             title: title.trim(),
             content: content.trim(),
             excerpt: content.trim().substring(0, 200) + '...',
+            date: new Date().toISOString().split('T')[0],
             tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+            published: true,
             readTime: calculateReadTime(content.trim()),
-            category: category || post.category
-          }
-        : post
-    );
+            views: 0,
+            likes: 0,
+            category: category || 'Personal'
+        };
 
-    savePosts(updatedPosts);
-    
-    // Reset form
-    setTitle('');
-    setContent('');
-    setTags('');
-    setCategory('');
-    setEditingPost(null);
-  };
+        const newPosts = [newPost, ...posts];
+        savePosts(newPosts);
+        
+        // Reset form
+        setTitle('');
+        setContent('');
+        setTags('');
+        setCategory('');
+        setShowCreateModal(false);
+    };
 
-  const handleDeletePost = (id: string) => {
-    const updatedPosts = posts.filter(post => post.id !== id);
-    savePosts(updatedPosts);
-  };
+    const handleEditPost = () => {
+        if (!editingPost || !title.trim() || !content.trim()) return;
 
-  const openEditModal = (post: BlogPost) => {
-    setEditingPost(post);
-    setTitle(post.title);
-    setContent(post.content);
-    setTags(post.tags.join(', '));
-    setCategory(post.category);
-  };
+        const updatedPosts = posts.map(post => 
+            post.id === editingPost.id 
+                ? {
+                    ...post,
+                    title: title.trim(),
+                    content: content.trim(),
+                    excerpt: content.trim().substring(0, 200) + '...',
+                    tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+                    readTime: calculateReadTime(content.trim()),
+                    category: category || post.category
+                  }
+                : post
+        );
 
-  const closeModals = () => {
-    setShowCreateModal(false);
-    setEditingPost(null);
-    setTitle('');
-    setContent('');
-    setTags('');
-    setCategory('');
-  };
+        savePosts(updatedPosts);
+        
+        // Reset form
+        setTitle('');
+        setContent('');
+        setTags('');
+        setCategory('');
+        setEditingPost(null);
+    };
 
-  // Filter posts based on search and category
-  const filteredPosts = posts.filter(post => {
-    const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         post.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         post.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    const matchesCategory = selectedCategory === 'All' || post.category === selectedCategory;
-    const matchesTag = selectedTag === 'All' || post.tags.includes(selectedTag);
-    
-    return matchesSearch && matchesCategory && matchesTag;
-  });
+    const confirmDeletePost = (id: string) => {
+        setPostToDelete(id);
+        setShowDeleteConfirmModal(true);
+    };
 
-  // Get all unique tags
-  const allTags = Array.from(new Set(posts.flatMap(post => post.tags)));
+    const handleDeleteConfirmed = () => {
+        if (postToDelete) {
+            const updatedPosts = posts.filter(post => post.id !== postToDelete);
+            savePosts(updatedPosts);
+            setPostToDelete(null);
+            setShowDeleteConfirmModal(false);
+        }
+    };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-slate-900 to-purple-900 relative overflow-hidden">
-      {/* Background Effects */}
-      <div className="fixed inset-0 bg-mesh-gradient-dark animate-gradient opacity-60"></div>
-      <div className="fixed inset-0 bg-mesh-gradient animate-gradient opacity-40"></div>
-      <div className="fixed inset-0 grid-pattern opacity-20"></div>
-      <div className="fixed inset-0 noise-texture opacity-50"></div>
+    const closeModals = () => {
+        setShowCreateModal(false);
+        setEditingPost(null);
+        setShowDeleteConfirmModal(false); // Close delete confirm modal too
+        setPostToDelete(null); // Clear post to delete
+        setTitle('');
+        setContent('');
+        setTags('');
+        setCategory('');
+    };
 
-      {/* Header */}
-      <header className="relative z-10 bg-gradient-to-r from-black/20 via-purple-900/20 to-black/20 backdrop-blur-xl border-b border-purple-500/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <Link href="/" className="flex items-center gap-2 text-purple-400 hover:text-purple-300 transition-colors">
-                <ArrowLeft className="w-5 h-5" />
-                <span>Back to Portfolio</span>
-              </Link>
-              <div className="flex items-center gap-3">
-                <BookOpen className="w-8 h-8 text-purple-400 glow" />
-                <h1 className="text-3xl font-bold text-gradient">My Blog</h1>
-              </div>
+    const openEditModal = (post: BlogPost) => {
+        setEditingPost(post);
+        setTitle(post.title);
+        setContent(post.content);
+        setTags(post.tags.join(', '));
+        setCategory(post.category);
+    };
+
+    // Filter posts based on search and category
+    const filteredPosts = posts.filter(post => {
+        const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              post.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              post.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+        
+        const matchesCategory = selectedCategory === 'All' || post.category === selectedCategory;
+        const matchesTag = selectedTag === 'All' || post.tags.includes(selectedTag);
+        
+        return matchesSearch && matchesCategory && matchesTag;
+    });
+
+    // Get all unique tags
+    const allTags = Array.from(new Set(posts.flatMap(post => post.tags)));
+
+    // Find the current post if an ID is in the URL
+    const currentPost = postId ? posts.find(p => p.id === postId) : null;
+
+    // --- Render Logic ---
+    // If postId is present and a post is found, render the single post view
+    if (postId && currentPost) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-black via-slate-900 to-purple-900 relative overflow-hidden font-inter">
+                {/* Custom CSS for gradients and animations */}
+                <style jsx global>{`
+                    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+                    .font-inter {
+                        font-family: 'Inter', sans-serif;
+                    }
+                    .bg-mesh-gradient-dark {
+                        background: radial-gradient(at 20% 80%, rgba(109, 40, 217, 0.3) 0%, transparent 50%),
+                                    radial-gradient(at 80% 20%, rgba(76, 29, 149, 0.3) 0%, transparent 50%);
+                    }
+                    .bg-mesh-gradient {
+                        background: radial-gradient(at 70% 30%, rgba(124, 58, 237, 0.2) 0%, transparent 50%),
+                                    radial-gradient(at 30% 70%, rgba(168, 85, 247, 0.2) 0%, transparent 50%);
+                    }
+                    .grid-pattern {
+                        background-image: linear-gradient(to right, rgba(128, 0, 128, 0.1) 1px, transparent 1px),
+                                          linear-gradient(to bottom, rgba(128, 0, 128, 0.1) 1px, transparent 1px);
+                        background-size: 20px 20px;
+                    }
+                    .noise-texture {
+                        background-image: url('data:image/svg+xml;base64,PHN2ZyB2aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGZpbHRlciBpZD0ibm9pc2VGaWx0ZXIiPjxmZVR1cmJ1bGVuY2UgdHlwZT0iZnJhY3RhbE5vaXNlIiBiYXNlRnJlcXVlbmN5PSIwLjciIG51bU9jdGF2ZXM9IjMiIHN0aXRjaFRpbGVzPSJub1N0aXRjaCIvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbHRlcj0idXJsKCNub2lzZUZpbHRlcikiIG9wYWNpdHk9IjAuMDgiLz48L3N2Zz4=');
+                        background-size: cover;
+                    }
+                    .animate-gradient {
+                        animation: gradientShift 15s ease infinite alternate;
+                    }
+                    @keyframes gradientShift {
+                        0% { background-position: 0% 50%; }
+                        50% { background-position: 100% 50%; }
+                        100% { background-position: 0% 50%; }
+                    }
+                    .text-gradient {
+                        background: linear-gradient(to right, #a855f7, #e879f9, #8b5cf6);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                    }
+                    .glow {
+                        text-shadow: 0 0 8px rgba(168, 85, 247, 0.6), 0 0 15px rgba(168, 85, 247, 0.4);
+                    }
+                    /* Markdown specific styling */
+                    .markdown-content h1, .markdown-content h2, .markdown-content h3, .markdown-content h4, .markdown-content h5, .markdown-content h6 {
+                        color: #a855f7; /* Purple for headings */
+                        margin-top: 1.5em;
+                        margin-bottom: 0.8em;
+                        font-weight: 600;
+                    }
+                    .markdown-content h1 { font-size: 2.5em; }
+                    .markdown-content h2 { font-size: 2em; border-bottom: 1px solid rgba(168, 85, 247, 0.3); padding-bottom: 0.3em; }
+                    .markdown-content h3 { font-size: 1.75em; }
+                    .markdown-content p {
+                        margin-bottom: 1em;
+                        line-height: 1.7;
+                        color: #e0e0e0; /* Light gray for paragraphs */
+                    }
+                    .markdown-content a {
+                        color: #8b5cf6; /* Violet for links */
+                        text-decoration: underline;
+                    }
+                    .markdown-content ul, .markdown-content ol {
+                        margin-bottom: 1em;
+                        padding-left: 1.5em;
+                        color: #e0e0e0;
+                    }
+                    .markdown-content li {
+                        margin-bottom: 0.5em;
+                    }
+                    .markdown-content code {
+                        background-color: rgba(168, 85, 247, 0.2); /* Light purple background for inline code */
+                        color: #e879f9; /* Pinkish purple for inline code */
+                        padding: 0.2em 0.4em;
+                        border-radius: 4px;
+                        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+                    }
+                    .markdown-content pre {
+                        background-color: rgba(0, 0, 0, 0.6); /* Darker background for code blocks */
+                        padding: 1em;
+                        border-radius: 8px;
+                        overflow-x: auto;
+                        margin-bottom: 1em;
+                        border: 1px solid rgba(168, 85, 247, 0.3);
+                    }
+                    .markdown-content pre code {
+                        background-color: transparent; /* No background for code inside pre */
+                        color: #c792ea; /* Lighter purple for code block text */
+                        padding: 0;
+                        font-size: 0.9em;
+                    }
+                    .markdown-content blockquote {
+                        border-left: 4px solid #8b5cf6; /* Violet border for blockquotes */
+                        padding-left: 1em;
+                        margin: 1em 0;
+                        color: #a0a0a0; /* Gray for blockquote text */
+                        font-style: italic;
+                    }
+                    .markdown-content table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-bottom: 1em;
+                    }
+                    .markdown-content th, .markdown-content td {
+                        border: 1px solid rgba(168, 85, 247, 0.3);
+                        padding: 0.8em;
+                        text-align: left;
+                        color: #e0e0e0;
+                    }
+                    .markdown-content th {
+                        background-color: rgba(168, 85, 247, 0.1);
+                        font-weight: 600;
+                    }
+                `}</style>
+
+                <div className="fixed inset-0 bg-mesh-gradient-dark animate-gradient opacity-60"></div>
+                <div className="fixed inset-0 bg-mesh-gradient animate-gradient opacity-40"></div>
+                <div className="fixed inset-0 grid-pattern opacity-20"></div>
+                <div className="fixed inset-0 noise-texture opacity-50"></div>
+
+                {/* Header for single post view */}
+                <header className="relative z-10 bg-gradient-to-r from-black/20 via-purple-900/20 to-black/20 backdrop-blur-xl border-b border-purple-500/20">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-6">
+                                <Link href="/blog" className="flex items-center gap-2 text-purple-400 hover:text-purple-300 transition-colors">
+                                    <ArrowLeft className="w-5 h-5" />
+                                    <span>Back to All Posts</span>
+                                </Link>
+                                <div className="flex items-center gap-3">
+                                    <BookOpen className="w-8 h-8 text-purple-400 glow" />
+                                    <h1 className="text-3xl font-bold text-gradient">My Blog</h1>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                {/* Main Content for Single Post */}
+                <main className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                    <article className="p-8 rounded-xl border border-purple-500/30 backdrop-blur bg-gradient-to-br from-black/60 via-purple-900/30 to-violet-800/20 shadow-lg">
+                        <h1 className="text-4xl md:text-5xl font-bold text-gradient mb-4 glow">
+                            {currentPost.title}
+                        </h1>
+                        <div className="flex flex-wrap items-center gap-4 text-sm text-purple-300 mb-6">
+                            <div className="flex items-center gap-1">
+                                <Calendar className="w-4 h-4" />
+                                {new Date(currentPost.date).toLocaleDateString()}
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <Clock className="w-4 h-4" />
+                                {currentPost.readTime} min read
+                            </div>
+                            {currentPost.category && (
+                                <Badge className="bg-violet-800/30 border border-violet-600/20 text-violet-200">
+                                    {currentPost.category}
+                                </Badge>
+                            )}
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-2 mb-8">
+                            {currentPost.tags.map(tag => (
+                                <Badge key={tag} className="bg-purple-800/30 border border-purple-600/20 text-purple-200">
+                                    <Tag className="w-3 h-3 mr-1" /> {tag}
+                                </Badge>
+                            ))}
+                        </div>
+
+                        <div className="markdown-content text-lg text-purple-100/90 leading-relaxed">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {currentPost.content}
+                            </ReactMarkdown>
+                        </div>
+                    </article>
+                </main>
             </div>
-            <div className="flex items-center gap-4">
-              {isAuthenticated ? (
-                <>
-                  <Button 
-                    onClick={() => setShowCreateModal(true)}
-                    className="bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    New Post
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={handleLogout}
-                    className="border-purple-500/50 text-purple-300 hover:bg-purple-500/10"
-                  >
-                    Logout
-                  </Button>
-                </>
-              ) : (
-                <Button 
-                  onClick={() => setShowAuthModal(true)}
-                  className="bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white"
-                >
-                  <Lock className="w-4 h-4 mr-2" />
-                  Admin Login
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
+        );
+    }
 
-      {/* Main Content */}
-      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Hero Section */}
-        <div className="text-center mb-16">
-          <h2 className="text-5xl md:text-6xl font-bold mb-6 text-gradient glow">Developer Insights</h2>
-          <p className="text-xl text-purple-200/80 max-w-3xl mx-auto leading-relaxed">
-            Welcome to my blog where I share my <span className="text-purple-400 font-semibold">coding journey</span>, 
-            <span className="text-violet-400 font-semibold"> technical insights</span>, and 
-            <span className="text-purple-300 font-semibold"> lessons learned</span> as a young developer.
-          </p>
-          <div className="w-32 h-1 bg-gradient-to-r from-purple-500 via-black to-violet-500 mx-auto mt-8 animate-gradient"></div>
-        </div>
+    // If no postId or post not found, render the list view (original content)
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-black via-slate-900 to-purple-900 relative overflow-hidden font-inter">
+            {/* Custom CSS for gradients and animations */}
+            <style jsx global>{`
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+                .font-inter {
+                    font-family: 'Inter', sans-serif;
+                }
+                .bg-mesh-gradient-dark {
+                    background: radial-gradient(at 20% 80%, rgba(109, 40, 217, 0.3) 0%, transparent 50%),
+                                radial-gradient(at 80% 20%, rgba(76, 29, 149, 0.3) 0%, transparent 50%);
+                }
+                .bg-mesh-gradient {
+                    background: radial-gradient(at 70% 30%, rgba(124, 58, 237, 0.2) 0%, transparent 50%),
+                                radial-gradient(at 30% 70%, rgba(168, 85, 247, 0.2) 0%, transparent 50%);
+                }
+                .grid-pattern {
+                    background-image: linear-gradient(to right, rgba(128, 0, 128, 0.1) 1px, transparent 1px),
+                                      linear-gradient(to bottom, rgba(128, 0, 128, 0.1) 1px, transparent 1px);
+                    background-size: 20px 20px;
+                }
+                .noise-texture {
+                    background-image: url('data:image/svg+xml;base64,PHN2ZyB2aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGZpbHRlciBpZD0ibm9pc2VGaWx0ZXIiPjxmZVR1cmJ1bGVuY2UgdHlwZT0iZnJhY3RhbE5vaXNlIiBiYXNlRnJlcXVlbmN5PSIwLjciIG51bU9jdGF2ZXM9IjMiIHN0aXRjaFRpbGVzPSJub1N0aXRjaCIvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbHRlcj0idXJsKCNub2lzZUZpbHRlcikiIG9wYWNpdHk9IjAuMDgiLz48L3N2Zz4=');
+                    background-size: cover;
+                }
+                .animate-gradient {
+                    animation: gradientShift 15s ease infinite alternate;
+                }
+                @keyframes gradientShift {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+                .text-gradient {
+                    background: linear-gradient(to right, #a855f7, #e879f9, #8b5cf6);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                }
+                .glow {
+                    text-shadow: 0 0 8px rgba(168, 85, 247, 0.6), 0 0 15px rgba(168, 85, 247, 0.4);
+                }
+                .hover-lift:hover {
+                    transform: translateY(-5px);
+                    box-shadow: 0 10px 20px rgba(168, 85, 247, 0.3);
+                }
+                .animate-float {
+                    animation: float 3s ease-in-out infinite;
+                }
+                @keyframes float {
+                    0% { transform: translateY(0px); }
+                    50% { transform: translateY(-10px); }
+                    100% { transform: translateY(0px); }
+                }
+                /* Markdown specific styling (for single post view) */
+                .markdown-content h1, .markdown-content h2, .markdown-content h3, .markdown-content h4, .markdown-content h5, .markdown-content h6 {
+                    color: #a855f7; /* Purple for headings */
+                    margin-top: 1.5em;
+                    margin-bottom: 0.8em;
+                    font-weight: 600;
+                }
+                .markdown-content h1 { font-size: 2.5em; }
+                .markdown-content h2 { font-size: 2em; border-bottom: 1px solid rgba(168, 85, 247, 0.3); padding-bottom: 0.3em; }
+                .markdown-content h3 { font-size: 1.75em; }
+                .markdown-content p {
+                    margin-bottom: 1em;
+                    line-height: 1.7;
+                    color: #e0e0e0; /* Light gray for paragraphs */
+                }
+                .markdown-content a {
+                    color: #8b5cf6; /* Violet for links */
+                    text-decoration: underline;
+                }
+                .markdown-content ul, .markdown-content ol {
+                    margin-bottom: 1em;
+                    padding-left: 1.5em;
+                    color: #e0e0e0;
+                }
+                .markdown-content li {
+                    margin-bottom: 0.5em;
+                }
+                .markdown-content code {
+                    background-color: rgba(168, 85, 247, 0.2); /* Light purple background for inline code */
+                    color: #e879f9; /* Pinkish purple for inline code */
+                    padding: 0.2em 0.4em;
+                    border-radius: 4px;
+                    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+                }
+                .markdown-content pre {
+                    background-color: rgba(0, 0, 0, 0.6); /* Darker background for code blocks */
+                    padding: 1em;
+                    border-radius: 8px;
+                    overflow-x: auto;
+                    margin-bottom: 1em;
+                    border: 1px solid rgba(168, 85, 247, 0.3);
+                }
+                .markdown-content pre code {
+                    background-color: transparent; /* No background for code inside pre */
+                    color: #c792ea; /* Lighter purple for code block text */
+                    padding: 0;
+                    font-size: 0.9em;
+                }
+                .markdown-content blockquote {
+                    border-left: 4px solid #8b5cf6; /* Violet border for blockquotes */
+                    padding-left: 1em;
+                    margin: 1em 0;
+                    color: #a0a0a0; /* Gray for blockquote text */
+                    font-style: italic;
+                }
+                .markdown-content table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 1em;
+                }
+                .markdown-content th, .markdown-content td {
+                    border: 1px solid rgba(168, 85, 247, 0.3);
+                    padding: 0.8em;
+                    text-align: left;
+                    color: #e0e0e0;
+                }
+                .markdown-content th {
+                    background-color: rgba(168, 85, 247, 0.1);
+                    font-weight: 600;
+                }
+            `}</style>
 
-        {/* Stats Section */}
-        <div className="grid md:grid-cols-4 gap-6 mb-12">
-          <Card className="bg-gradient-to-br from-black/60 via-purple-900/40 to-violet-800/30 backdrop-blur-xl border border-purple-500/30 hover-lift">
-            <CardContent className="p-6 text-center">
-              <div className="text-3xl font-bold text-gradient mb-2">{posts.length}</div>
-              <div className="text-purple-200 text-sm">Total Posts</div>
-              <BookOpen className="w-6 h-6 text-purple-400 mx-auto mt-2" />
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-br from-black/60 via-purple-900/40 to-violet-800/30 backdrop-blur-xl border border-purple-500/30 hover-lift">
-            <CardContent className="p-6 text-center">
-              <div className="text-3xl font-bold text-gradient mb-2">{posts.reduce((sum, post) => sum + post.views, 0)}</div>
-              <div className="text-purple-200 text-sm">Total Views</div>
-              <Eye className="w-6 h-6 text-purple-400 mx-auto mt-2" />
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-br from-black/60 via-purple-900/40 to-violet-800/30 backdrop-blur-xl border border-purple-500/30 hover-lift">
-            <CardContent className="p-6 text-center">
-              <div className="text-3xl font-bold text-gradient mb-2">{posts.reduce((sum, post) => sum + post.likes, 0)}</div>
-              <div className="text-purple-200 text-sm">Total Likes</div>
-              <Heart className="w-6 h-6 text-purple-400 mx-auto mt-2" />
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-br from-black/60 via-purple-900/40 to-violet-800/30 backdrop-blur-xl border border-purple-500/30 hover-lift">
-            <CardContent className="p-6 text-center">
-              <div className="text-3xl font-bold text-gradient mb-2">{allTags.length}</div>
-              <div className="text-purple-200 text-sm">Topics Covered</div>
-              <Tag className="w-6 h-6 text-purple-400 mx-auto mt-2" />
-            </CardContent>
-          </Card>
-        </div>
+            {/* Background Effects */}
+            <div className="fixed inset-0 bg-mesh-gradient-dark animate-gradient opacity-60"></div>
+            <div className="fixed inset-0 bg-mesh-gradient animate-gradient opacity-40"></div>
+            <div className="fixed inset-0 grid-pattern opacity-20"></div>
+            <div className="fixed inset-0 noise-texture opacity-50"></div>
 
-        {/* Search and Filters */}
-        <div className="mb-12 space-y-6">
-          {/* Search Bar */}
-          <div className="relative max-w-2xl mx-auto">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search posts, tags, or content..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-black/50 border border-purple-500/30 rounded-lg text-white placeholder-purple-300/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            />
-          </div>
-
-          {/* Category Filter */}
-          <div className="flex flex-wrap justify-center gap-3">
-            {categories.map((cat) => (
-              <Button
-                key={cat}
-                variant={selectedCategory === cat ? "default" : "outline"}
-                onClick={() => setSelectedCategory(cat)}
-                className={`${
-                  selectedCategory === cat
-                    ? 'bg-gradient-to-r from-purple-600 to-violet-600 text-white'
-                    : 'border-purple-500/50 text-purple-300 hover:bg-purple-500/10'
-                } transition-all duration-300`}
-              >
-                {cat}
-              </Button>
-            ))}
-          </div>
-
-          {/* Tag Filter */}
-          {allTags.length > 0 && (
-            <div className="flex flex-wrap justify-center gap-2">
-              <Button
-                variant={selectedTag === 'All' ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedTag('All')}
-                className={`${
-                  selectedTag === 'All'
-                    ? 'bg-gradient-to-r from-purple-600 to-violet-600 text-white'
-                    : 'border-purple-500/50 text-purple-300 hover:bg-purple-500/10'
-                } transition-all duration-300`}
-              >
-                All Tags
-              </Button>
-              {allTags.slice(0, 10).map((tag) => (
-                <Button
-                  key={tag}
-                  variant={selectedTag === tag ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedTag(tag)}
-                  className={`${
-                    selectedTag === tag
-                      ? 'bg-gradient-to-r from-purple-600 to-violet-600 text-white'
-                      : 'border-purple-500/50 text-purple-300 hover:bg-purple-500/10'
-                  } transition-all duration-300`}
-                >
-                  {tag}
-                </Button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Blog Posts */}
-        {filteredPosts.length === 0 ? (
-          <div className="text-center py-20">
-            <BookOpen className="w-24 h-24 text-purple-400/50 mx-auto mb-8 animate-float" />
-            <h2 className="text-4xl font-bold text-gradient mb-6">
-              {posts.length === 0 ? 'No Posts Yet' : 'No Posts Found'}
-            </h2>
-            <p className="text-xl text-purple-200/80 mb-8">
-              {posts.length === 0 
-                ? (isAuthenticated 
-                    ? "Ready to share your first story? Click 'New Post' to get started!" 
-                    : "Check back soon for amazing content about coding, development, and tech insights!"
-                  )
-                : "Try adjusting your search terms or filters to find what you're looking for."
-              }
-            </p>
-            {isAuthenticated && posts.length === 0 && (
-              <Button 
-                onClick={() => setShowCreateModal(true)}
-                size="lg"
-                className="bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white px-8 py-4"
-              >
-                <Plus className="w-5 h-5 mr-2" />
-                Create Your First Post
-              </Button>
-            )}
-          </div>
-        ) : (
-          <div className="grid gap-8">
-            {filteredPosts.map((post) => (
-              <Card key={post.id} className="bg-gradient-to-br from-black/60 via-purple-900/40 to-violet-800/30 backdrop-blur-xl border border-purple-500/30 hover-lift overflow-hidden relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer"></div>
-                <CardHeader className="relative z-10">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-2xl text-gradient mb-3 hover:glow transition-all">
-                        {post.title}
-                      </CardTitle>
-                      <div className="flex items-center gap-6 text-sm text-purple-300 mb-4">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          {new Date(post.date).toLocaleDateString()}
+            {/* Header */}
+            <header className="relative z-10 bg-gradient-to-r from-black/20 via-purple-900/20 to-black/20 backdrop-blur-xl border-b border-purple-500/20">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-6">
+                            {/* Link back to portfolio (unchanged) */}
+                            <Link href="/" className="flex items-center gap-2 text-purple-400 hover:text-purple-300 transition-colors">
+                                <ArrowLeft className="w-5 h-5" />
+                                <span>Back to Portfolio</span>
+                            </Link>
+                            <div className="flex items-center gap-3">
+                                <BookOpen className="w-8 h-8 text-purple-400 glow" />
+                                <h1 className="text-3xl font-bold text-gradient">My Blog</h1>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <User className="w-4 h-4" />
-                          Jehoshua
+                        <div className="flex items-center gap-4">
+                            {isAuthenticated ? (
+                                <>
+                                    <Button 
+                                        onClick={() => setShowCreateModal(true)}
+                                        className="bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white"
+                                    >
+                                        <Plus className="w-4 h-4 mr-2" />
+                                        New Post
+                                    </Button>
+                                    <Button 
+                                        variant="outline" 
+                                        onClick={handleLogout}
+                                        className="border-purple-500/50 text-purple-300 hover:bg-purple-500/10"
+                                    >
+                                        Logout
+                                    </Button>
+                                </>
+                            ) : (
+                                <Button 
+                                    onClick={() => setShowAuthModal(true)}
+                                    className="bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white"
+                                >
+                                    <Lock className="w-4 h-4 mr-2" />
+                                    Admin Login
+                                </Button>
+                            )}
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          {post.readTime} min read
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Eye className="w-4 h-4" />
-                          {post.views} views
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Heart className="w-4 h-4" />
-                          {post.likes} likes
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        <Badge className="bg-gradient-to-r from-black/50 to-purple-800/50 text-purple-200 border border-purple-500/30">
-                          {post.category}
-                        </Badge>
-                        {post.tags.map((tag) => (
-                          <Badge key={tag} className="bg-gradient-to-r from-black/50 to-purple-800/50 text-purple-200 border border-purple-500/30">
-                            {tag}
-                          </Badge>
+                    </div>
+                </div>
+            </header>
+
+            {/* Main Content - List View */}
+            <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                {/* Hero Section */}
+                <div className="text-center mb-16">
+                    <div className="flex justify-center items-center gap-4 mb-6">
+                        <BookOpen className="w-16 h-16 text-purple-400 animate-float glow" />
+                    </div>
+                    <h2 className="text-5xl md:text-6xl font-bold mb-6 text-gradient glow">Developer Insights</h2>
+                    <p className="text-xl text-purple-200/80 max-w-3xl mx-auto leading-relaxed">
+                        Welcome to my blog where I share my <span className="text-purple-400 font-semibold">coding journey</span>, 
+                        <span className="text-violet-400 font-semibold"> technical insights</span>, and 
+                        <span className="text-purple-300 font-semibold"> lessons learned</span> as a young developer.
+                    </p>
+                    <div className="w-32 h-1 bg-gradient-to-r from-purple-500 via-black to-violet-500 mx-auto mt-8 animate-gradient"></div>
+                </div>
+
+                {/* Search and Filters */}
+                <div className="mb-12 space-y-6">
+                    {/* Search Bar */}
+                    <div className="relative max-w-2xl mx-auto">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-400 w-5 h-5" />
+                        <input
+                            type="text"
+                            placeholder="Search posts, tags, or content..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-12 pr-4 py-3 bg-black/50 border border-purple-500/30 rounded-lg text-white placeholder-purple-300/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        />
+                    </div>
+
+                    {/* Category Filter */}
+                    <div className="flex flex-wrap justify-center gap-3">
+                        {categories.map((cat) => (
+                            <Button
+                                key={cat}
+                                variant={selectedCategory === cat ? "default" : "outline"}
+                                onClick={() => setSelectedCategory(cat)}
+                                className={`${
+                                    selectedCategory === cat
+                                        ? 'bg-gradient-to-r from-purple-600 to-violet-600 text-white'
+                                        : 'border-purple-500/50 text-purple-300 hover:bg-purple-500/10'
+                                } transition-all duration-300`}
+                            >
+                                {cat}
+                            </Button>
                         ))}
-                      </div>
                     </div>
-                    {isAuthenticated && (
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => openEditModal(post)}
-                          className="hover:bg-purple-500/20"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleDeletePost(post.id)}
-                          className="hover:bg-red-500/20 text-red-400"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+
+                    {/* Tag Filter */}
+                    {allTags.length > 0 && (
+                        <div className="flex flex-wrap justify-center gap-2">
+                            <Button
+                                variant={selectedTag === 'All' ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setSelectedTag('All')}
+                                className={`${
+                                    selectedTag === 'All'
+                                        ? 'bg-gradient-to-r from-purple-600 to-violet-600 text-white'
+                                        : 'border-purple-500/50 text-purple-300 hover:bg-purple-500/10'
+                                } transition-all duration-300`}
+                            >
+                                All Tags
+                            </Button>
+                            {allTags.slice(0, 10).map((tag) => (
+                                <Button
+                                    key={tag}
+                                    variant={selectedTag === tag ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => setSelectedTag(tag)}
+                                    className={`${
+                                        selectedTag === tag
+                                            ? 'bg-gradient-to-r from-purple-600 to-violet-600 text-white'
+                                            : 'border-purple-500/50 text-purple-300 hover:bg-purple-500/10'
+                                    } transition-all duration-300`}
+                                >
+                                    {tag}
+                                </Button>
+                            ))}
+                        </div>
                     )}
-                  </div>
-                </CardHeader>
-                <CardContent className="relative z-10">
-                  <CardDescription className="text-base leading-relaxed text-purple-100/80 mb-6">
-                    {post.excerpt}
-                  </CardDescription>
-                  <div className="prose prose-invert max-w-none">
-                    <div className="text-purple-100/90 leading-relaxed whitespace-pre-wrap">
-                      {post.content}
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between mt-8 pt-6 border-t border-purple-500/20">
-                    <div className="flex items-center gap-4">
-                      <Button variant="ghost" size="sm" className="hover:bg-purple-500/20 text-purple-300">
-                        <Heart className="w-4 h-4 mr-2" />
-                        Like ({post.likes})
-                      </Button>
-                      <Button variant="ghost" size="sm" className="hover:bg-purple-500/20 text-purple-300">
-                        <Share2 className="w-4 h-4 mr-2" />
-                        Share
-                      </Button>
-                      <Button variant="ghost" size="sm" className="hover:bg-purple-500/20 text-purple-300">
-                        <MessageCircle className="w-4 h-4 mr-2" />
-                        Comment
-                      </Button>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-purple-400">
-                      <TrendingUp className="w-4 h-4" />
-                      <span>Trending</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </main>
+                </div>
 
-      {/* Auth Modal */}
-      {showAuthModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-md bg-gradient-to-br from-black/80 via-purple-900/60 to-violet-800/40 backdrop-blur-xl border border-purple-500/30">
-            <CardHeader>
-              <CardTitle className="text-2xl text-gradient text-center">Admin Login</CardTitle>
-              <CardDescription className="text-center text-purple-200">
-                Enter your credentials to manage blog posts
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-purple-200 mb-2">Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3 py-2 bg-black/50 border border-purple-500/30 rounded-md text-white placeholder-purple-300/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="Enter your email"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-purple-200 mb-2">Password</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-2 bg-black/50 border border-purple-500/30 rounded-md text-white placeholder-purple-300/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="Enter your password"
-                />
-              </div>
-              {authError && (
-                <p className="text-red-400 text-sm">{authError}</p>
-              )}
-              <div className="flex gap-3 pt-4">
-                <Button 
-                  onClick={handleAuth}
-                  className="flex-1 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white"
-                >
-                  Login
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setShowAuthModal(false);
-                    setAuthError('');
-                    setEmail('');
-                    setPassword('');
-                  }}
-                  className="border-purple-500/50 text-purple-300 hover:bg-purple-500/10"
-                >
-                  Cancel
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+                {/* Blog Posts List */}
+                {filteredPosts.length === 0 ? (
+                    <div className="text-center py-20">
+                        <BookOpen className="w-24 h-24 text-purple-400/50 mx-auto mb-8 animate-float" />
+                        <h2 className="text-4xl font-bold text-gradient mb-6">
+                            {posts.length === 0 ? 'No Posts Yet' : 'No Posts Found'}
+                        </h2>
+                        <p className="text-xl text-purple-200/80 mb-8">
+                            {posts.length === 0 
+                                ? (isAuthenticated 
+                                    ? "Ready to share your first story? Click 'New Post' to get started!" 
+                                    : "Check back soon for amazing content about coding, development, and tech insights!"
+                                  )
+                                : "Try adjusting your search terms or filters to find what you're looking for."
+                            }
+                        </p>
+                        {isAuthenticated && posts.length === 0 && (
+                            <Button 
+                                onClick={() => setShowCreateModal(true)}
+                                size="lg"
+                                className="bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white px-8 py-4"
+                            >
+                                <Plus className="w-5 h-5 mr-2" />
+                                Create Your First Post
+                            </Button>
+                        )}
+                    </div>
+                ) : (
+                    <div className="space-y-10">
+                        {filteredPosts.map(post => (
+                            // Link to the same /blog page, but with an 'id' query parameter
+                            <Link key={post.id} href={`/blog?id=${post.id}`} className="block group">
+                                <div className="p-6 rounded-xl border border-purple-500/30 backdrop-blur bg-gradient-to-br from-black/60 via-purple-900/30 to-violet-800/20 hover-lift transition-transform">
+                                    <h2 className="text-2xl font-semibold text-gradient mb-2 group-hover:underline">
+                                        {post.title}
+                                    </h2>
+                                    <div className="flex items-center gap-4 text-sm text-purple-300 mb-2">
+                                        <div className="flex items-center gap-1">
+                                            <Calendar className="w-4 h-4" />
+                                            {new Date(post.date).toLocaleDateString()}
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <Clock className="w-4 h-4" />
+                                            {post.readTime} min read
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2 mb-3">
+                                        {post.tags.map(tag => (
+                                            <Badge key={tag} className="bg-purple-800/30 border border-purple-600/20 text-purple-200">
+                                                {tag}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                    <p className="text-purple-100/90 leading-relaxed line-clamp-2">
+                                        {post.excerpt || post.content.split('\n').filter(Boolean).slice(0, 2).join(' ')}
+                                    </p>
+                                    {isAuthenticated && (
+                                        <div className="flex gap-2 mt-4 pt-4 border-t border-purple-500/20">
+                                            <Button 
+                                                onClick={(e: { preventDefault: () => void; }) => { e.preventDefault(); openEditModal(post); }} // Prevent link navigation
+                                                size="sm"
+                                                className="bg-purple-700/50 hover:bg-purple-700 text-purple-200"
+                                            >
+                                                <Edit className="w-4 h-4 mr-2" />
+                                                Edit
+                                            </Button>
+                                            <Button 
+                                                onClick={(e: { preventDefault: () => void; }) => { e.preventDefault(); confirmDeletePost(post.id); }} // Prevent link navigation
+                                                size="sm"
+                                                className="bg-red-700/50 hover:bg-red-700 text-red-200"
+                                            >
+                                                <Trash2 className="w-4 h-4 mr-2" />
+                                                Delete
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                )}
+            </main>
 
-      {/* Create/Edit Post Modal */}
-      {(showCreateModal || editingPost) && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-black/80 via-purple-900/60 to-violet-800/40 backdrop-blur-xl border border-purple-500/30">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-2xl text-gradient">
-                  {editingPost ? 'Edit Post' : 'Create New Post'}
-                </CardTitle>
-                <Button variant="ghost" size="sm" onClick={closeModals}>
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-purple-200 mb-2">Title</label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3 py-2 bg-black/50 border border-purple-500/30 rounded-md text-white placeholder-purple-300/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="Enter post title"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-purple-200 mb-2">Category</label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-3 py-2 bg-black/50 border border-purple-500/30 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="">Select a category</option>
-                  {categories.slice(1).map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-purple-200 mb-2">Content</label>
-                <textarea
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  rows={15}
-                  className="w-full px-3 py-2 bg-black/50 border border-purple-500/30 rounded-md text-white placeholder-purple-300/50 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
-                  placeholder="Write your blog post content here... (Supports Markdown)"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-purple-200 mb-2">Tags</label>
-                <input
-                  type="text"
-                  value={tags}
-                  onChange={(e) => setTags(e.target.value)}
-                  className="w-full px-3 py-2 bg-black/50 border border-purple-500/30 rounded-md text-white placeholder-purple-300/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="Enter tags separated by commas (e.g., coding, javascript, tutorial)"
-                />
-              </div>
-              <div className="flex gap-3 pt-4">
-                <Button 
-                  onClick={editingPost ? handleEditPost : handleCreatePost}
-                  className="flex-1 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white"
-                  disabled={!title.trim() || !content.trim()}
-                >
-                  <Save className="w-4 h-4 mr-2" />
-                  {editingPost ? 'Update Post' : 'Create Post'}
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={closeModals}
-                  className="border-purple-500/50 text-purple-300 hover:bg-purple-500/10"
-                >
-                  Cancel
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+            {/* Auth Modal */}
+            {showAuthModal && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <Card className="w-full max-w-md bg-gradient-to-br from-black/80 via-purple-900/60 to-violet-800/40 backdrop-blur-xl border border-purple-500/30">
+                        <CardHeader>
+                            <CardTitle className="text-2xl text-gradient text-center">Admin Login</CardTitle>
+                            <CardDescription className="text-center text-purple-200">
+                                Enter your credentials to manage blog posts
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-purple-200 mb-2">Email</label>
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="w-full px-3 py-2 bg-black/50 border border-purple-500/30 rounded-md text-white placeholder-purple-300/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    placeholder="Enter your email"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-purple-200 mb-2">Password</label>
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="w-full px-3 py-2 bg-black/50 border border-purple-500/30 rounded-md text-white placeholder-purple-300/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    placeholder="Enter your password"
+                                />
+                            </div>
+                            {authError && (
+                                <p className="text-red-400 text-sm">{authError}</p>
+                            )}
+                            <div className="flex gap-3 pt-4">
+                                <Button 
+                                    onClick={handleAuth}
+                                    className="flex-1 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white"
+                                >
+                                    Login
+                                </Button>
+                                <Button 
+                                    variant="outline" 
+                                    onClick={() => {
+                                        setShowAuthModal(false);
+                                        setAuthError('');
+                                        setEmail('');
+                                        setPassword('');
+                                    }}
+                                    className="border-purple-500/50 text-purple-300 hover:bg-purple-500/10"
+                                >
+                                    Cancel
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+
+            {/* Create/Edit Post Modal */}
+            {(showCreateModal || editingPost) && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-black/80 via-purple-900/60 to-violet-800/40 backdrop-blur-xl border border-purple-500/30">
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="text-2xl text-gradient">
+                                    {editingPost ? 'Edit Post' : 'Create New Post'}
+                                </CardTitle>
+                                <Button variant="ghost" size="sm" onClick={closeModals}>
+                                    <X className="w-5 h-5" />
+                                </Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div>
+                                <label className="block text-sm font-medium text-purple-200 mb-2">Title</label>
+                                <input
+                                    type="text"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    className="w-full px-3 py-2 bg-black/50 border border-purple-500/30 rounded-md text-white placeholder-purple-300/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    placeholder="Enter post title"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-purple-200 mb-2">Category</label>
+                                <select
+                                    value={category}
+                                    onChange={(e) => setCategory(e.target.value)}
+                                    className="w-full px-3 py-2 bg-black/50 border border-purple-500/30 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                >
+                                    <option value="">Select a category</option>
+                                    {categories.slice(1).map((cat) => (
+                                        <option key={cat} value={cat}>{cat}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-purple-200 mb-2">Content</label>
+                                <textarea
+                                    value={content}
+                                    onChange={(e) => setContent(e.target.value)}
+                                    rows={15}
+                                    className="w-full px-3 py-2 bg-black/50 border border-purple-500/30 rounded-md text-white placeholder-purple-300/50 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                                    placeholder="Write your blog post content here... (Supports Markdown)"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-purple-200 mb-2">Tags</label>
+                                <input
+                                    type="text"
+                                    value={tags}
+                                    onChange={(e) => setTags(e.target.value)}
+                                    className="w-full px-3 py-2 bg-black/50 border border-purple-500/30 rounded-md text-white placeholder-purple-300/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    placeholder="Enter tags separated by commas (e.g., coding, javascript, tutorial)"
+                                />
+                            </div>
+                            <div className="flex gap-3 pt-4">
+                                <Button 
+                                    onClick={editingPost ? handleEditPost : handleCreatePost}
+                                    className="flex-1 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white"
+                                    disabled={!title.trim() || !content.trim()}
+                                >
+                                    <Save className="w-4 h-4 mr-2" />
+                                    {editingPost ? 'Update Post' : 'Create Post'}
+                                </Button>
+                                <Button 
+                                    variant="outline" 
+                                    onClick={closeModals}
+                                    className="border-purple-500/50 text-purple-300 hover:bg-purple-500/10"
+                                >
+                                    Cancel
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteConfirmModal && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <Card className="w-full max-w-sm bg-gradient-to-br from-black/80 via-purple-900/60 to-violet-800/40 backdrop-blur-xl border border-purple-500/30">
+                        <CardHeader>
+                            <CardTitle className="text-2xl text-gradient text-center">Confirm Deletion</CardTitle>
+                            <CardDescription className="text-center text-purple-200">
+                                Are you sure you want to delete this post? This action cannot be undone.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex gap-3 pt-4">
+                                <Button 
+                                    onClick={handleDeleteConfirmed}
+                                    className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                                >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Delete
+                                </Button>
+                                <Button 
+                                    variant="outline" 
+                                    onClick={closeModals}
+                                    className="border-purple-500/50 text-purple-300 hover:bg-purple-500/10"
+                                >
+                                    Cancel
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
         </div>
-      )}
-    </div>
-  );
+    );
 }
