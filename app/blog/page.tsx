@@ -138,7 +138,7 @@ export default function BlogPage() {
     const postId = searchParams.get('id'); // This will be the ID if present in /blog?id=<some_id>
 
     const blogs: BlogPost[] = rawBlogs;
-    
+
     useEffect(() => {
         // Load posts from localStorage
         const savedPosts = localStorage.getItem('blog-posts');
@@ -146,8 +146,8 @@ export default function BlogPage() {
             setPosts(JSON.parse(savedPosts));
         } else {
             // If no saved posts, initialize from blogs.json and save to localStorage
-            setPosts(blogs);
-            localStorage.setItem('blog-posts', JSON.stringify(blogs));
+            setPosts(rawBlogs);
+            localStorage.setItem('blog-posts', JSON.stringify(rawBlogs));
         }
         
         // Check if user is authenticated
