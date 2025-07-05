@@ -94,7 +94,7 @@ const Badge: React.FC<WithChildren> = ({ children, className = '' }) => (
 
 
 import Link from 'next/link'; // Keep Next.js Link for navigation
-import rawBlogs from '@/data/blogs.json'; // Initial data source
+const rawBlogs: Partial<BlogPost>[] = require('@/data/blogs.json');
 
 interface BlogPost {
     id: string;
@@ -137,7 +137,19 @@ export default function BlogPage() {
     const searchParams = useSearchParams();
     const postId = searchParams.get('id'); // This will be the ID if present in /blog?id=<some_id>
 
-    const blogs: BlogPost[] = rawBlogs;
+    const blogs: BlogPost[] = rawBlogs.map((post) => ({
+        id: post.id!,
+        title: post.title!,
+        content: post.content!,
+        excerpt: post.excerpt!,
+        date: post.date!,
+        tags: post.tags ?? [],
+        published: post.published ?? true,
+        readTime: post.readTime ?? 1,
+        views: post.views ?? 0,
+        likes: post.likes ?? 0,
+        category: post.category ?? 'Uncategorized'
+    }));
 
     useEffect(() => {
         // Load posts from localStorage
@@ -146,8 +158,8 @@ export default function BlogPage() {
             setPosts(JSON.parse(savedPosts));
         } else {
             // If no saved posts, initialize from blogs.json and save to localStorage
-            setPosts(rawBlogs);
-            localStorage.setItem('blog-posts', JSON.stringify(rawBlogs));
+            setPosts(blogs);
+            localStorage.setItem('blog-posts', JSON.stringify(blogs));
         }
         
         // Check if user is authenticated
